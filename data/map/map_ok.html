@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=muqxIubVMYH11GIOLp6nGTqm2QEZTqBy"></script>
+    <script type="text/javascript" src="http://api.map.baidu.com/library/Heatmap/2.0/src/Heatmap_min.js"></script>
+    <title>热力图功能示例</title>
+    <style type="text/css">
+		ul,li{list-style: none;margin:0;padding:0;float:left;}
+		html{height:100%}
+		body{height:100%;margin:0px;padding:0px;font-family:"微软雅黑";}
+		#container{height:500px;width:100%;}
+		#r-result{width:100%;}
+    </style>	
+</head>
+<body>
+	<div id="container"></div>
+	<div id="r-result">
+		<input type="button"  onclick="openHeatmap();" value="show heat map"/><input type="button"  onclick="closeHeatmap();" value="close heat map"/>
+	</div>
+</body>
+</html>
+<script type="text/javascript">
+    var map = new BMap.Map("container");          // 创建地图实例
+
+    var point = new BMap.Point(113.418261, 33.921984);
+    map.centerAndZoom(point, 5);             // 初始化地图，设置中心点坐标和地图级别
+    map.enableScrollWheelZoom(); // 允许滚轮缩放
+  
+    var points =[
+	{"lng":119.82734,"lat":44.698233,"count":500},
+	{"lng":118.664649,"lat":43.54055,"count":500},
+	{"lng":118.461556,"lat":44.777363,"count":500},
+	{"lng":119.65248,"lat":45.522235,"count":500},
+	{"lng":122.29129415355533,"lat":43.65829014983674,"count":500},
+	{"lng":119.242607,"lat":42.200278,"count":500},
+	{"lng":119.26816941290396,"lat":42.18413064880197,"count":500},
+	{"lng":122.57255,"lat":46.268946,"count":500},
+	{"lng":119.762005,"lat":49.142438,"count":500},
+	{"lng":119.760111,"lat":49.154739,"count":500},
+	{"lng":119.843897,"lat":49.267944,"count":500},
+	{"lng":118.969319,"lat":42.775014,"count":500},
+	{"lng":120.39811,"lat":47.638081,"count":500},
+	{"lng":118.901048,"lat":42.259212,"count":500},
+	{"lng":121.669669,"lat":38.995469,"count":500},
+	{"lng":118.659909,"lat":43.530698,"count":500},
+	{"lng":122.066097,"lat":46.072183,"count":500},
+	{"lng":127.517583,"lat":50.251323,"count":500},
+	{"lng":123.0077633288837,"lat":41.118743682153465,"count":500},
+	{"lng":121.974392,"lat":40.743466,"count":500},
+	{"lng":121.783447,"lat":41.594428,"count":500},
+	{"lng":123.839399,"lat":41.317404,"count":500},
+	{"lng":124.33854311476908,"lat":40.1290228266375,"count":500},
+	{"lng":121.126293,"lat":38.869529,"count":500},
+	{"lng":120.018429,"lat":40.153852,"count":500},
+	{"lng":122.986142,"lat":39.705369,"count":500},
+	{"lng":121.574238,"lat":39.767219,"count":500},
+	{"lng":121.140226,"lat":38.919614,"count":500},
+	{"lng":123.27359808775667,"lat":42.765540738312566,"count":500},
+	{"lng":123.17245120514733,"lat":41.27333926556943,"count":500},
+	{"lng":121.60410590341539,"lat":39.022726375652574,"count":500},
+	{"lng":123.60524,"lat":41.958902,"count":500},
+	{"lng":124.68924201525451,"lat":40.45944381575861,"count":500},
+	{"lng":124.2757801644583,"lat":42.50855704819172,"count":500},
+	{"lng":123.568261,"lat":41.810041,"count":500},
+	{"lng":123.410907,"lat":41.591867,"count":500},
+	{"lng":123.21429768936304,"lat":41.79709469413748,"count":500},
+	{"lng":120.02630174191806,"lat":40.30512900582333,"count":500},
+	{"lng":123.85484961461594,"lat":42.29975701212545,"count":500},
+	{"lng":119.253314,"lat":39.9857,"count":500},
+	{"lng":121.7906987887405,"lat":39.70895639618986,"count":500},
+	{"lng":122.829808,"lat":40.867835,"count":500},
+	{"lng":124.082957,"lat":43.286363,"count":500},
+	{"lng":122.23339137079269,"lat":40.66865106647352,"count":500},
+	{"lng":120.766683,"lat":41.802193,"count":500},
+	{"lng":121.618075,"lat":38.892702,"count":500},
+	{"lng":120.33636,"lat":41.518421,"count":500},
+	{"lng":122.9341452670001,"lat":39.85890978417193,"count":500},
+	{"lng":121.920078,"lat":39.035721,"count":500},
+	{"lng":123.925854,"lat":41.894989,"count":500},
+	{"lng":122.79857550058897,"lat":41.500330370097615,"count":500},
+	{"lng":123.28282,"lat":41.357814,"count":500},
+	{"lng":123.69397109269792,"lat":41.5820511378407,"count":500},
+	{"lng":119.750524,"lat":41.131202,"count":500},
+	{"lng":124.218976,"lat":42.942669,"count":500},
+	{"lng":122.08210720446722,"lat":41.11369946763335,"count":500},
+	{"lng":122.555202,"lat":40.636351,"count":500},
+	{"lng":125.45480890407713,"lat":42.68393389598205,"count":500},
+	{"lng":126.413109,"lat":43.949165,"count":500},
+	{"lng":123.70852021747343,"lat":43.767694883216855,"count":500},
+	{"lng":125.94265013851434,"lat":41.73639712986761,"count":500},
+	{"lng":125.154799,"lat":43.955704,"count":500},
+	{"lng":126.069684,"lat":42.916297,"count":500},
+	{"lng":124.83299453234117,"lat":45.136048970084005,"count":500},
+	{"lng":122.84077667910014,"lat":45.621086275218886,"count":500},
+	{"lng":125.687103,"lat":44.071733,"count":500},
+	{"lng":125.96882675838017,"lat":44.194372106981,"count":500},
+	{"lng":124.343548,"lat":43.313766,"count":500},
+	{"lng":121.821238,"lat":41.353692,"count":500},
+	{"lng":126.745499,"lat":42.975906,"count":500},
+	{"lng":127.183188,"lat":44.586332,"count":500},
+	{"lng":126.56454398883335,"lat":43.87198833435933,"count":500},
+	{"lng":122.65669691185141,"lat":44.516123119025025,"count":500},
+	{"lng":129.47130153101367,"lat":43.05966660114006,"count":500},
+	{"lng":126.599671,"lat":45.602947,"count":500},
+	{"lng":130.290744,"lat":46.641988,"count":500},
+	{"lng":128.94941872931116,"lat":45.81976936296562,"count":500},
+	{"lng":127.50083029523519,"lat":50.250690090738274,"count":500},
+	{"lng":131.0190480471218,"lat":45.77500536864039,"count":500},
+	{"lng":128.87544,"lat":47.723844,"count":500},
+	{"lng":125.02183973021087,"lat":46.596709020007594,"count":500},
+	{"lng":126.452271130752,"lat":45.941458151669195,"count":500},
+	{"lng":127.031788,"lat":45.780321,"count":500},
+	{"lng":126.568076,"lat":45.731119,"count":500},
+	{"lng":124.137203,"lat":47.470519,"count":500},
+	{"lng":131.1714017395816,"lat":46.65510206248248,"count":500},
+	{"lng":131.15055588277252,"lat":46.818437079002656,"count":500},
+	{"lng":126.985841,"lat":45.542001,"count":500},
+	{"lng":130.3979101631059,"lat":46.809721977545315,"count":500},
+	{"lng":130.94176727325066,"lat":45.32153988655108,"count":500},
+	{"lng":130.29247205063453,"lat":47.33866590372683,"count":500},
+	{"lng":130.338925,"lat":46.813813,"count":500},
+	{"lng":122.26036326322144,"lat":43.633756072995986,"count":500},
+	{"lng":121.664909,"lat":42.064019,"count":500},
+	{"lng":124.135047,"lat":47.475643,"count":500},
+	{"lng":116.034976,"lat":43.925453,"count":500}];
+	   
+    if(!isSupportCanvas()){
+    	alert('热力图目前只支持有canvas支持的浏览器,您所使用的浏览器不能使用热力图功能~')
+    }
+	//详细的参数,可以查看heatmap.js的文档 https://github.com/pa7/heatmap.js/blob/master/README.md
+	//参数说明如下:
+	/* visible 热力图是否显示,默认为true
+     * opacity 热力的透明度,1-100
+     * radius 势力图的每个点的半径大小   
+     * gradient  {JSON} 热力图的渐变区间 . gradient如下所示
+     *	{
+			.2:'rgb(0, 255, 255)',
+			.5:'rgb(0, 110, 255)',
+			.8:'rgb(100, 0, 255)'
+		}
+		其中 key 表示插值的位置, 0~1. 
+		    value 为颜色值. 
+     */
+	heatmapOverlay = new BMapLib.HeatmapOverlay({"radius":20});
+	map.addOverlay(heatmapOverlay);
+	heatmapOverlay.setDataSet({data:points,max:1000}); //只需要调节max中的值就可以，也就是最高电压等级，越接近这个值就越红，越不接近越蓝
+	//是否显示热力图
+    function openHeatmap(){
+        heatmapOverlay.show();
+    }
+	function closeHeatmap(){
+        heatmapOverlay.hide();
+    }
+	closeHeatmap();
+    function setGradient(){
+     	/*格式如下所示:
+		{
+	  		0:'rgb(102, 255, 0)',
+	 	 	.5:'rgb(255, 170, 0)',
+		  	1:'rgb(255, 0, 0)'
+		}*/
+     	var gradient = {};
+     	var colors = document.querySelectorAll("input[type='color']");
+     	colors = [].slice.call(colors,0);
+     	colors.forEach(function(ele){
+			gradient[ele.getAttribute("data-key")] = ele.value; 
+     	});
+        heatmapOverlay.setOptions({"gradient":gradient});
+    }
+	//判断浏览区是否支持canvas
+    function isSupportCanvas(){
+        var elem = document.createElement('canvas');
+        return !!(elem.getContext && elem.getContext('2d'));
+    }
+</script>
