@@ -242,25 +242,31 @@ class GHNet(object):
             ed_info = self.ed_info[self.ed_info['j'] == st_name]
             for _, ed in ed_info.iterrows():
                 ret.append(('ed', '%s_%s' % (ed['i'], ed['j'])))
-        if 'gen' in self.input_types:
+        if 'generator' in self.input_types:
             if st.type == 50:
                 for gen in self.gens[self.gens['station'] == st_name].index:
-                    ret.extend([(it, gen) for it in self.input_types['gen']])
-        if 'st' in self.input_types:
+                    ret.extend([('generator_' + it, gen)
+                                for it in self.input_types['generator']])
+        if 'station' in self.input_types:
             if st.type == 50:
-                ret.extend([(it, st_name) for it in self.input_types['st'] \
-                            if it in {'st_pg', 'st_qg', 'st_sg'}])
-            elif st.type >= 51 and st.type <= 52:
                 ret.extend(
-                    [(it, st_name) for it in self.input_types['st'] if it in {'st_pg', 'st_pl'}])
+                    [('station_' + it, st_name) for it in self.input_types['station']
+                     if it in {'pg', 'qg', 'sg'}])
+            elif 51 <= st.type <= 52:
+                ret.extend(
+                    [('station_' + it, st_name) for it in self.input_types['station']
+                     if it in {'pg', 'pl'}])
             elif st.type == 60:
                 ret.extend(
-                    [(it, st_name) for it in self.input_types['st'] if it in {'st_pl', 'st_ql'}])
+                    [('station_' + it, st_name) for it in self.input_types['station']
+                     if it in {'pl', 'ql'}])
             # else:
-            # 	ret.extend([(it,st_name) for it in self.input_types['st']])
-        if 'dc' in self.input_types:
-            if st.type >= 41 and st.type <= 44:
-                ret.extend([(it, st_name) for it in self.input_types['dc']])
+            # 	ret.extend([('station_' + it,st_name)
+            #               for it in self.input_types['station']])
+        if 'dcline' in self.input_types:
+            if 41 <= st.type <= 44:
+                ret.extend([('dcline_' + it, st_name)
+                            for it in self.input_types['dcline']])
         return ret
 
     def load_net(self, path):
@@ -435,9 +441,9 @@ if __name__ == '__main__':
     path = "/home/sdy/python/db/2018_11"
     if os.name == 'nt':
         path = "d:/python/db/2018_11"
-    input_dic = {'gen': ['gen_p', 'gen_u'],
-                 'st': ['st_pg', 'st_pl', 'st_ql'],
-                 'dc': ['dc_p', 'dc_q', 'dc_acu'],
+    input_dic = {'generator': ['p', 'v'],
+                 'station': ['pg', 'pl', 'ql'],
+                 'dcline': ['p', 'q', 'acu'],
                  'ed': ['ed']}
     net = GHNet("inf", input_dic)
     net.load_net(path + "/net")

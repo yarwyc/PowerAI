@@ -20,10 +20,22 @@ from core.topo import PowerGraph
 
 
 def f_name_conv(x):
+    """
+    Trim string, used in reading LFs.
+
+    :param x: str.
+    :return: str.
+    """
     return x.strip(' \'')
 
 
 def f_vbase_conv(v):
+    """
+    Convert voltage level, from float to integer.
+
+    :param v: float. Voltage base.
+    :return: integer. Voltage level.
+    """
     if v > 900.:
         return 1000
     elif v > 700.:
@@ -44,6 +56,14 @@ def f_vbase_conv(v):
 
 
 def load_elem_info(file_name, etypes=[], index_col=['name']):
+    """
+    Load element infos.
+
+    :param file_name: str.
+    :param etypes: [str]. Used element types.
+    :param index_col: list of str. Index.
+    :return: pd.DataFrame.
+    """
     elems = pd.read_table(file_name, encoding='gbk', sep=' ', index_col=index_col)
     if len(etypes) > 0:
         elems = elems[elems['type'].isin(etypes)]
@@ -51,6 +71,13 @@ def load_elem_info(file_name, etypes=[], index_col=['name']):
 
 
 def load_station_info(file_name, index_col=['name']):
+    """
+    Load station infos.
+
+    :param file_name: str.
+    :param index_col: list of str. Index.
+    :return: pd.DataFrame.
+    """
     st_info = pd.read_table(file_name, encoding='gbk', sep=' ', index_col=index_col)
     return st_info
 
@@ -59,7 +86,13 @@ class Power:
     """
     Power class deal with PSASP data.
 
-
+    Attributes:
+        format_key, format_type, file_format, index_dict, output_format,
+        multi_line_header, useless_columns:
+            dict. Configuration for loading and saving LFs.
+        fmt: str. Format template, 'on', 'off' or user defined.
+        data: dict of pd.DataFrame. All loaded data are stored here.
+        station: pd.DataFrame. Station infos.
     """
 
     def __init__(self, fmt):
@@ -76,6 +109,14 @@ class Power:
         self.stations = None
 
     def get_column_and_index(self, file_name, fmt='on', ex=None):
+        """
+        Get relevent infos of the file, including etype, columns, index and ex.
+
+        :param file_name: std.
+        :param fmt: str. Format template.
+        :param ex: str. None for getting extension name from file_name.
+        :return: (etype, columns, index, ex).
+        """
         if ex is None and '.' in file_name:
             ex = file_name[file_name.rindex('.') + 1:].lower()
         if fmt not in self.file_format or ex not in self.format_key:
@@ -89,12 +130,27 @@ class Power:
         return etypes, columns, indices, ex
 
     def get_flat_columns(self, fmt, etype, ex):
+        """
+        Get flatten columns.
+
+        :param fmt: str.
+        :param etype: str.
+        :param ex: str.
+        :return: [columns].
+        """
         if ex in self.format_type['single']:
             return self.file_format[fmt][ex]
         else:
             return list(chain(*self.file_format[fmt][ex + '_' + etype]))
 
     def get_flag_valid(self, df, ex):
+        """
+        Get valid lp or st lines.
+
+        :param df: pd.DataFrame.
+        :param ex: str.
+        :return: pd.Series of bool.
+        """
         if ex in self.format_key['lp']:
             return Power.get_flag(df, 'lp')
         elif ex in self.format_key['st']:
@@ -103,6 +159,16 @@ class Power:
             return pd.Series(data=True, index=df.index)
 
     def load_lf(self, file_name, fmt='on', ex=None, drop_useless=True):
+        """
+        Load LF.L* files.
+
+        :param file_name: str.
+        :param fmt: str.
+        :param ex: str.
+        :param drop_useless: bool. Drop useless columns to save memory.
+                                   It would use default value for saving file.
+        :return: pd.DataFrame.
+        """
         etype, columns, indices, ex = self.get_column_and_index(file_name, fmt, ex)
         if ex == 'l1':
             converters = {'name': f_name_conv, 'st_name': f_name_conv}
@@ -129,6 +195,16 @@ class Power:
         return df
 
     def save_lf(self, file_name, df, fmt='on', ex=None, ori_order=True, miss='fill'):
+        """
+        Save LF.L* files.
+
+        :param file_name: str.
+        :param df: pd.DataFrame.
+        :param fmt: str.
+        :param ex: str.
+        :param ori_order: bool. Use the original order while the df is loaded.
+        :param miss: str, fill or raise. Fill default value or raise exception.
+        """
         etype, columns, _, ex = self.get_column_and_index(file_name, fmt, ex)
         if ori_order and 'ori_order' in df.columns:
             columns = columns + ['ori_order']
@@ -156,6 +232,17 @@ class Power:
 
     def load_lp(self, file_name, base=None, fmt='on', ex=None, flag='lp',
                 drop_useless=True):
+        """
+        Load LF.LP* and ST.S* files.
+
+        :param file_name: str.
+        :param base: pd.DataFrame. Base df of LF.
+        :param fmt: str.
+        :param ex: str.
+        :param flag: str. lp or st.
+        :param drop_useless: bool.
+        :return: pd.DataFrame. Concatenated df.
+        """
         etype, columns, indices, ex = self.get_column_and_index(file_name, fmt, ex)
         skiprows = 1 if ex == 'lp1' else 0
         if drop_useless and etype in self.useless_columns:
@@ -175,6 +262,11 @@ class Power:
 
     def load_st(self, file_name, base=None, fmt='on', ex=None, flag='st',
                 drop_useless=True):
+        """
+        Load ST.S* files using load_lp with the same parameter.
+
+        :return: pd.DataFrame. Concatenated df.
+        """
         if ex is None and '.' in file_name:
             ex = file_name[file_name.rindex('.') + 1:].lower()
         if ex == 's1':
@@ -186,6 +278,17 @@ class Power:
 
     def load_mlf(self, file_or_buffer, base=None, fmt='on',
                  ex=None, header_char=None, drop_useless=True):
+        """
+        Load multi-line files, including NL4, NP4, NS4, ML4, MP4.
+
+        :param file_or_buffer: str or StringIO.
+        :param base: pd.DataFrame. Base df of LF.
+        :param fmt: str.
+        :param ex: str.
+        :param header_char: Separator of header, None for NL4, NP4, NS4, # for ML4, MP4.
+        :param drop_useless: str.
+        :return: {str: pd.DataFrame}. {etype: df}.
+        """
         if isinstance(file_or_buffer, StringIO):
             source = file_or_buffer
             assert ex is not None
@@ -271,6 +374,15 @@ class Power:
         return base
 
     def save_mlf(self, file_name, data, fmt='on', ex=None, miss='fill'):
+        """
+        Save multi-line files, including NL4, NP4, NS4, ML4, MP4.
+
+        :param file_name: str.
+        :param data: {str: pd.DataFrame}. {etype: df}.
+        :param fmt: str.
+        :param ex: str.
+        :param miss: str, fill or raise. Fill default value or raise exception.
+        """
         etypes, columns, _, ex = self.get_column_and_index(file_name, fmt, ex)
         headers = self.multi_line_header[ex]
         with open(file_name, 'w') as fp:
@@ -298,6 +410,14 @@ class Power:
                     fp.write(out_fmt % tuple(values))
 
     def get_output_format(self, ex, columns, dtypes):
+        """
+        Get output format string.
+
+        :param ex: str.
+        :param columns: [str].
+        :param dtypes: pd.Series.
+        :return: str.
+        """
         default = self.output_format['default']
         if ex not in self.output_format:
             formats = [default[dtypes[col].kind][1] for col in columns]
@@ -307,6 +427,16 @@ class Power:
         return ','.join(formats)
 
     def check_columns(self, df, etype, columns=None, ex=None, fmt='on'):
+        """
+        Get the missing columns of designated file type.
+
+        :param df: pd.DataFrame.
+        :param etype: str. Equipment type.
+        :param columns: [str]. Target columns.
+        :param ex: str. Extension name of file.
+        :param fmt: str. Format template.
+        :return: [str]. Missing columns.
+        """
         if not columns:
             if isinstance(self.format_key[ex], list):
                 columns = list(chain(self.file_format[fmt][ex + '_' + etype]))
@@ -315,6 +445,13 @@ class Power:
         return [col for col in df.columns if col not in columns]
 
     def fill_default(self, df, ex, columns):
+        """
+        Fill default values of designated columns.
+
+        :param df: pd.DataFrame.
+        :param ex: str. Extension name.
+        :param columns: [str]. Target columns.
+        """
         for col in columns:
             value = self.output_format[ex][col][0]
             if value is None:
@@ -326,6 +463,12 @@ class Power:
 
     @staticmethod
     def set_flag(df, valid, flag):
+        """
+        Set each line's flag of lp or st.
+        :param df: pd.DataFrame.
+        :param valid: bool or [bool].
+        :param flag: str, lp or st.
+        """
         if flag == 'lp':
             bit = 1
         elif flag == 'st':
@@ -341,12 +484,25 @@ class Power:
 
     @staticmethod
     def get_flag(df, flag):
+        """
+        Get each line's flag of lp or st.
+        :param df: pd.DataFrame.
+        :param flag: str, lp or st.
+        :return: pd.Series. Validation of each line.
+        """
         if 'flag' not in df.columns:
             return pd.Series(data=False, index=df.index, name='flag')
         bit = 1 if flag == 'lp' else 2
         return df['flag'] & bit > 0
 
     def drop_data(self, etype, fmt, flag):
+        """
+        Drop lp or st data.
+
+        :param etype: str. Equipment type.
+        :param fmt: str.
+        :param flag: str, lp or st.
+        """
         if flag == 'lp':
             ex1 = self.format_key[etype][1]
         elif flag == 'st':
@@ -361,6 +517,9 @@ class Power:
         Power.set_flag(self.data[etype], False, flag)
 
     def describe(self):
+        """
+        Describe lf, lp, st record amounts for each etype.
+        """
         for name, df in self.data.items():
             n_lf = df.shape[0]
             n_lp = Power.get_flag(df, 'lp').sum()
@@ -368,6 +527,16 @@ class Power:
             print('[%s]: n_lf=%d, n_lp=%d, n_st=%d' % (name, n_lf, n_lp, n_st))
 
     def load_power(self, path, fmt='on', lp=True, st=True, station=True, shorten=True):
+        """
+        Load power from data directory.
+
+        :param path: str.
+        :param fmt: str.
+        :param lp: bool. Whether load lp files.
+        :param st: bool. Whether load st files.
+        :param station: bool. Whether load station infos.
+        :param shorten: bool. Use shorten storage.
+        """
         self.data['bus'] = self.load_lf(path + '/LF.L1', fmt)
         self.data['acline'] = self.load_lf(path + '/LF.L2', fmt)
         self.data['transformer'] = self.load_lf(path + '/LF.L3', fmt)
@@ -407,6 +576,12 @@ class Power:
         # self.describe()
 
     def shorten_storage(self, etypes=None, fmt='on'):
+        """
+        Shorten the storage format, int32 for integer, float32 for float.
+
+        :param etypes: str.
+        :param fmt: str.
+        """
         if not etypes:
             etypes = self.data.keys()
         else:
@@ -426,6 +601,11 @@ class Power:
                 self.data[e][columns] = self.data[e][columns].astype('float32')
 
     def generate_mdc_version_outline(self, fmt='on'):
+        """
+        Generate mdc version and outline infos.
+
+        :param fmt: str.
+        """
         self.data['version'] = pd.DataFrame([get_format_version('mdc')],
                                             columns=['version'])
         Power.set_flag(self.data['version'], True, 'lp')
@@ -455,11 +635,18 @@ class Power:
         Power.set_flag(self.data['outline'], True, 'lp')
 
     def generate_island_info(self):
+        """
+        Generate island info.
+        """
         graph = PowerGraph(self, graph_type='multi', node_type='bus')
         islands = graph.get_islands(10)
         self.data['bus']['island'] = islands
 
     def get_largest_island(self):
+        """
+        Get the largest island.
+        :return: int. No. of the largest island.
+        """
         if 'island' not in self.data['bus'].columns:
             self.generate_island_info()
         counts = self.data['bus']['island'].value_counts()
@@ -468,6 +655,9 @@ class Power:
         return counts.index[0]
 
     def generate_station_info(self):
+        """
+        Generate station info.
+        """
         if 'island' not in self.data['bus'].columns:
             self.generate_island_info()
         names = ['%s_%d' % (n, i) for idx, n, i in
@@ -492,6 +682,15 @@ class Power:
             self.data['bus'].loc[self.data['load'].bus, 'st_no'].values
 
     def save_power(self, path, fmt='on', lp=True, st=True, miss='fill'):
+        """
+        Save power to power directory.
+
+        :param path: str.
+        :param fmt: str.
+        :param lp: bool. Whether save lp files.
+        :param st: bool. Whether save st files.
+        :param miss: str, fill or raise.
+        """
         if fmt != self.fmt:
             print("Format mismatch: load is %s, save is %s" % (self.fmt, fmt))
         if not os.path.exists(path):
@@ -523,43 +722,13 @@ class Power:
             self.save_mlf(path + '/ST.NS4', self.data, fmt=fmt, miss=miss)
             self.save_lf(path + '/ST.MS4', self.data['vsc'], fmt=fmt, miss=miss)
 
-    # zll add begin
-    def statistic_power(self, count=True):
-        # 设备的统计函数，比如交流线：投运数量、并联电容数量、并联电抗数据、串联电抗数量、小支路数量
-        count_ac = Counter(self.data['acline']['mark'])
-        # 0:无效；1:有效;2:i侧单端断开;3:j侧单端断开
-        count_ac_on = count_ac[1]
-        count_ac_pc = 0  # 并联电容
-        count_ac_pr = 0  # 并联电抗
-        count_ac_sr = 0  # 串联电抗
-        count_ac_bs = 0  # 小支路
-        for i in range(0, self.data['acline'].shape[0]):
-            ac_id = self.data['acline'].index[i]
-            ac_r = self.data['acline']['r'][ac_id]
-            ac_x = self.data['acline']['x'][ac_id]
-            ac_b = self.data['acline']['b'][ac_id]
-            if self.data['acline']['ibus'][ac_id] == self.data['acline']['jbus'][ac_id]:
-                if (abs(ac_r) < 1e-4) & (ac_x < 1e-6) & (abs(ac_b) < 1e-6):
-                    count_ac_pc = count_ac_pc + 1
-                elif (abs(ac_r) < 1e-4) & (ac_x > 1e-6) & (abs(ac_b) < 1e-6):
-                    count_ac_pr = count_ac_pr + 1
-                else:
-                    continue
-            elif (abs(ac_r) < 1e-4) & (abs(ac_x) > 1e-3) & (abs(ac_b) < 1e-6):
-                count_ac_sr = count_ac_sr + 1
-            elif (abs(ac_r) < 1e-4) & (abs(ac_x) < 1e-3) & (abs(ac_b) < 1e-6):
-                count_ac_bs = count_ac_bs + 1
-            else:
-                continue
-        print(count_ac_on)
-        print(count_ac_pc)
-        print(count_ac_pr)
-        print(count_ac_sr)
-        print(count_ac_bs)
-    # zll add end
-
     @staticmethod
     def statistic_acline(aclines):
+        """
+        Statistic acline.
+
+        :param aclines: pd.DataFrame.
+        """
         valid_on = aclines['mark'] > 0
         valid_pc = aclines['ibus'] == aclines['jbus']
         # valid_r0 = aclines['r'] == 0.

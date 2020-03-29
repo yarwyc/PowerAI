@@ -30,8 +30,8 @@ if __name__ == '__main__':
     res_type = 'cct'
     res_name = res_type
     res_path = path + "/" + res_name
-    input_dic = {'gen': ['gen_p', 'gen_u'],
-                 'st': ['st_pl', 'st_ql']}
+    input_dic = {'generator': ['p', 'v'],
+                 'station': ['pl', 'ql']}
 
     dr_percs = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
     net_path = path + "/net"

@@ -38,12 +38,12 @@ if __name__ == '__main__':
     path = "d:/python/db/2018_11" if args.path is None else args.path
     net_path = path + "/net"
     res_path = path + "/" + args.res_type
-    input_dic = {'gen': ['gen_p', 'gen_u'],
-                 'st': ['st_pl', 'st_ql']}
+    input_dic = {'generator': ['p', 'v'],
+                 'station': ['pl', 'ql']}
     '''
-    input_dic = {'gen':['gen_p','gen_u'],
-                 'st':['st_pg', 'st_pl','st_ql'],
-                 'dc':['dc_p','dc_q','dc_acu'],
+    input_dic = {'generator':['p','v'],
+                 'station':['pg', 'pl','ql'],
+                 'dcline':['p','q','acu'],
                  'ed':['ed']}
     '''
 
@@ -140,7 +140,7 @@ if __name__ == '__main__':
         for i, il in enumerate(data_set.input_layer):
             if data_set.column_valid[i]:
                 input_layer.append(il)
-        lmd_types = ['gen_p']
+        lmd_types = ['generator_p']
         for y_i in range(len(grad_ret)):
             lmd = grad_ret[y_i][0] / max_min
             # lmd = grad_ret[y_i][0]
@@ -186,7 +186,7 @@ if __name__ == '__main__':
         adjusted_indices = set()
         power_per_round = -0.1  # 10MW, positive for promote stability
         y_i = 0
-        lmd_types = ['gen_p']
+        lmd_types = ['generator_p']
         input_layer = []
         for i, il in enumerate(data_set.input_layer):
             if data_set.column_valid[i]:

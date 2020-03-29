@@ -28,11 +28,11 @@ if __name__ == '__main__':
 	path = "/home/sdy/python/db/2018_11"
 	if os.name=='nt':
 		path = "d:/python/db/2018_11"
-	input_dic = {'gen':['gen_p','gen_u']}
+	input_dic = {'generator':['p','v']}
 	"""
-	input_dic = {'gen':['gen_p','gen_u'],
-	  			'st':['st_pg', 'st_pl','st_ql'],
-	  			'dc':['dc_p','dc_q','dc_acu'],
+	input_dic = {'generator':['p','v'],
+	  			'station':['pg', 'pl','ql'],
+	  			'dcline':['p','q','acu'],
 				'ed':['ed']}
 	"""
 

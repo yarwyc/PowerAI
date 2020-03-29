@@ -16,7 +16,6 @@ from core.power import load_elem_info
 
 
 class GHData(object):
-
     """
     Dataset class for GHNet
 
@@ -59,22 +58,22 @@ class GHData(object):
         print("loading data...")
         n_column = len(self.input_layer)
         indices = -np.ones((n_column,), dtype=np.int32)
-        types = set([t for (t, elem) in self.input_layer])
-        datas = []
+        types = set([il[0] for il in self.input_layer])
+        data = []
         begin = 0
         for t in types:
             arch = np.load('%s/%s.npz' % (self.data_path, t), allow_pickle=True)
-            data = pd.DataFrame(data=arch['datas'].T,
-                                index=arch['times'],
-                                columns=arch['elems'],
-                                dtype=np.float32)
-            for i, elem in enumerate(data.columns):
+            df = pd.DataFrame(data=arch['data'],
+                              index=arch['times'],
+                              columns=arch['elems'],
+                              dtype=np.float32)
+            for i, elem in enumerate(df.columns):
                 if (t, elem) in self.input_layer:
                     indices[self.input_layer.index((t, elem))] = begin + i
-            begin += len(data.columns)
-            datas.append(data)
-            print(t, data.shape)
-        self.input_data = pd.concat(datas, axis=1)
+            begin += len(df.columns)
+            data.append(df)
+            print(t, df.shape)
+        self.input_data = pd.concat(data, axis=1)
         self.input_data = self.input_data.iloc[:, indices]
         # still the original size, where invalid columns should be datas[-1]
         self.input_data.drop_duplicates(inplace=True)
@@ -155,14 +154,14 @@ class GHData(object):
         """
         Initial column_vali, column_min, column_max before normalize
         """
-        delta_thres = {'gen_p': 0.1,
-                       'gen_u': 0.001,
-                       'st_pg': 0.1,
-                       'st_pl': 0.1,
-                       'st_ql': 0.1,
-                       'dc_p': 0.1,
-                       'dc_q': 0.1,
-                       'dc_acu': 0.001,
+        delta_thres = {'generator_p': 0.1,
+                       'generator_v': 0.001,
+                       'station_pg': 0.1,
+                       'station_pl': 0.1,
+                       'station_ql': 0.1,
+                       'dcline_p': 0.1,
+                       'dcline_q': 0.1,
+                       'dcline_acu': 0.001,
                        'ed': 0.00001}
 
         self.column_min = np.nanmin(self.input_data, axis=0)
@@ -172,25 +171,25 @@ class GHData(object):
         elem_info = load_elem_info(self.model_path + "/elem_info.dat")
         gens = elem_info[elem_info['type'] == 5]
         for i, (t, elem) in enumerate(self.input_layer):
-            if t == 'gen_p':
+            if t == 'generator_p':
                 self.column_min[i] = gens['limit1'][elem]
                 self.column_max[i] = gens['limit2'][elem]
-            elif t == 'st_pg':
+            elif t == 'station_pg':
                 sub_gens = gens[gens.station == elem]
                 self.column_min[i] = np.sum(sub_gens['limit1'])
                 self.column_max[i] = np.sum(sub_gens['limit2'])
-            elif t == 'gen_u' or t == 'dc_acu':
+            elif t == 'generator_v' or t == 'dcline_acu':
                 self.column_min[i] = 0.9
                 self.column_max[i] = 1.15
-            # elif t=='st_pl' or t=='st_ql' or t=='ed' or t=='dc_p' or
-            # t=='dc_q':
+            # elif t=='station_pl' or t=='station_ql' or t=='ed_ed'
+            # or t=='dcline_p' or t=='dcline_q':
             else:
                 d80 = (self.column_max[i] - self.column_min[i]) / 8
                 self.column_min[i] -= d80
                 self.column_max[i] += d80
             self.column_valid[i] = self.column_valid[i] \
-                & (np.isnan(max_min[i]) == False) \
-                & (max_min[i] > delta_thres[t])
+                                   & (not np.isnan(max_min[i])) \
+                                   & (max_min[i] > delta_thres[t])
 
     def normalize(self, range_min=-1.0, range_max=1.0):
         """
@@ -258,7 +257,7 @@ class GHData(object):
         if dt_test_begin is not None:
             if dt_test_end is None:
                 dt_test_end = dt_test_begin \
-                    + datetime.timedelta(days=1, seconds=-1)
+                              + datetime.timedelta(days=1, seconds=-1)
             self.sample_prop.loc[self.sample_prop.dt.between(dt_test_begin,
                                                              dt_test_end),
                                  'role'] = max(ids) + 1
@@ -379,9 +378,9 @@ class GHData(object):
             batch_begin = curr
             batch_end = batch_begin + n_batch
             if batch_end > sample_size:
-                batch_indices[:sample_size - batch_begin, :] =\
+                batch_indices[:sample_size - batch_begin, :] = \
                     round_indices[batch_begin:sample_size, :]
-                batch_indices[sample_size - batch_begin:, :] =\
+                batch_indices[sample_size - batch_begin:, :] = \
                     round_indices[0:batch_end - sample_size, :]
             else:
                 batch_indices[:] = round_indices[batch_begin:batch_end, :]
@@ -447,9 +446,9 @@ if __name__ == '__main__':
     path = "/home/sdy/python/db/2018_11"
     if os.name == 'nt':
         path = "d:/python/db/2018_11"
-    input_dic = {'gen': ['gen_p', 'gen_u'],
-                 'st': ['st_pg', 'st_pl', 'st_ql'],
-                 'dc': ['dc_p', 'dc_q', 'dc_acu'],
+    input_dic = {'generator': ['p', 'v'],
+                 'station': ['pg', 'pl', 'ql'],
+                 'dcline': ['p', 'q', 'acu'],
                  'ed': ['ed']}
 
     net = GHNet("inf", input_dic)
